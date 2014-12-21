@@ -26,10 +26,29 @@ extension HanekeGlobals {
 public class NetworkFetcher<T : DataConvertible> : Fetcher<T> {
     
     let URL : NSURL
+    let URLRequest : NSURLRequest
     
     public init(URL : NSURL) {
         self.URL = URL
-
+        let mutR = NSMutableURLRequest(URL: URL)
+        
+        let acceptLanguage: String = "en-US,en;q=0.8"
+        let userAgent: String = "Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4"
+        let acceptEncoding: String = "gzip;q=1.0,compress;q=0.8"
+        
+        let options:[String:String] = [
+            "Accept-Encoding": acceptEncoding,
+            "Accept-Language": acceptLanguage,
+            "User-Agent": userAgent,
+            "Cache-Control":"max-age=0",
+            "Connection":"keep-alive",
+            "Accept":"*/*",
+        ]
+        for (key,value) in options {
+            mutR.addValue(value, forHTTPHeaderField: key)
+        }
+        
+        self.URLRequest = mutR
         let key =  URL.absoluteString!
         super.init(key: key)
     }
@@ -44,7 +63,7 @@ public class NetworkFetcher<T : DataConvertible> : Fetcher<T> {
     
     public override func fetch(failure fail : ((NSError?) -> ()), success succeed : (T.Result) -> ()) {
         self.cancelled = false
-        self.task = self.session.dataTaskWithURL(self.URL) {[weak self] (data : NSData!, response : NSURLResponse!, error : NSError!) -> Void in
+        self.task = self.session.dataTaskWithRequest(self.URLRequest) {[weak self] (data : NSData!, response : NSURLResponse!, error : NSError!) -> Void in
             if let strongSelf = self {
                 strongSelf.onReceiveData(data, response: response, error: error, failure: fail, success: succeed)
             }
